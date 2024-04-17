@@ -7,6 +7,12 @@ class RpnPrinter implements Expr.Visitor<String> {
 	String print(Expr expr) {
 		return expr.accept(this);
 	}
+	
+	@Override
+	public String visitConditional(Conditional expr) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
 	@Override
 	public String visitBinary(Binary expr) {
@@ -45,6 +51,5 @@ class RpnPrinter implements Expr.Visitor<String> {
 		            new Expr.Literal("str")));
 
 		System.out.println(new RpnPrinter().print(expression));
-	}
-	
+	}	
 }

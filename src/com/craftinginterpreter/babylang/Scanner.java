@@ -72,6 +72,10 @@ class Scanner {
 			case '+': addToken(TokenType.PLUS); break;
 			case ';': addToken(TokenType.SEMICOLON); break;
 			case '*': addToken(TokenType.STAR); break;
+			case '&': addToken(TokenType.AND); break;
+			case '|': addToken(TokenType.OR); break;
+			case '?': addToken(TokenType.QUESTION); break;
+			case ':': addToken(TokenType.COLON); break;
 			
 			/* BANG, BANG_EQUAL,
 		  	EQUAL, EQUAL_EQUAL,
@@ -149,7 +153,7 @@ class Scanner {
 		String text = this.source.substring(start, current);
 		TokenType type = keywords.get(text);
 		if (type == null) type = TokenType.IDENTIFIER;	
-		addToken(TokenType.IDENTIFIER);
+		addToken(type);
 	}
 	
 	private void number() {

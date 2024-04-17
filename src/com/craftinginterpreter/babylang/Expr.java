@@ -5,6 +5,7 @@ import com.craftinginterpreter.babylang.TokenType.*;
 abstract class Expr {
 
 	interface Visitor<R> {
+		R visitConditional(Conditional expr);
 		R visitBinary(Binary expr);
 		R visitGrouping(Grouping expr);
 		R visitLiteral(Literal expr);
@@ -12,6 +13,23 @@ abstract class Expr {
 	}
 
 	abstract <R> R accept(Visitor<R> visitor);
+
+	static class Conditional extends Expr {
+		Conditional(Expr expression, Expr thenStatement, Expr elseStatement) {
+			this.expression = expression;
+			this.thenStatement = thenStatement;
+			this.elseStatement = elseStatement;
+		}
+
+		@Override
+		<R> R accept(Visitor<R> visitor) {
+			return visitor.visitConditional(this);
+		}
+
+		final Expr expression;
+		final Expr thenStatement;
+		final Expr elseStatement;
+	}
 
 	static class Binary extends Expr {
 		Binary(Expr left, Token operator, Expr right) {

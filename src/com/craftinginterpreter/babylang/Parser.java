@@ -7,8 +7,8 @@ import com.craftinginterpreter.babylang.Expr.*;
 
 /*
  * grammar rules for parser
- * expression -> comma
- * comma -> equality ((",") equality)
+ * expression -> comma 
+ * comma -> equality ((",") equality) TODO add later comma operator 
  * equality -> comparison (("!=" | "==") comparison)*
  * comparison -> term((">"|">="|"<"|"<=") term)*
  * term -> factor(("-","+") factor)*
@@ -36,7 +36,32 @@ public class Parser {
 	 }
 	
 	private Expr expression() {
-		return equality();
+		return conditional();
+	}
+	
+	private Expr conditional() {
+		Expr expr = bitwise();
+		
+		if (match(TokenType.QUESTION)) {
+			Expr thenStatement = bitwise();
+			consume(TokenType.COLON, "Expect ':' after then branch of conditional expression.");
+			Expr elseStatement = bitwise();
+			expr = new Conditional(expr, thenStatement, elseStatement);
+		}
+		
+		return expr;
+	}
+	
+	private Expr bitwise() {
+		Expr expr = equality();
+		
+		while (match(TokenType.AND, TokenType.OR)) {
+			Token token = previous();
+			Expr right = equality();
+			expr = new Binary(expr, token, right);
+		}
+		
+		return expr;
 	}
 	
 	private Expr equality() {
@@ -45,7 +70,7 @@ public class Parser {
 		while (match(TokenType.BANG_EQUAL, TokenType.EQUAL_EQUAL)) {
 			Token token = previous();
 			Expr right = comparison();
-			return new Binary(expr, token, right);
+			expr = new Binary(expr, token, right);
 		}
 		
 		return expr;
@@ -57,7 +82,7 @@ public class Parser {
 		while (match(TokenType.GREATER, TokenType.GREATER_EQUAL, TokenType.LESS, TokenType.LESS_EQUAL)) {
 			Token token = previous();
 			Expr right = term();
-			return new Binary(expr, token, right);
+			expr = new Binary(expr, token, right);
 		}
 		
 		return expr;
@@ -69,7 +94,7 @@ public class Parser {
 		while (match(TokenType.MINUS, TokenType.PLUS)) {
 			Token token = previous();
 			Expr right = factor();
-			return new Binary(expr, token, right);
+			expr = new Binary(expr, token, right);
 		}
 		
 		return expr;
@@ -81,7 +106,7 @@ public class Parser {
 		while (match(TokenType.SLASH, TokenType.STAR)) {
 			Token token = previous();
 			Expr right = unary();
-			return new Binary(expr, token, right);
+			expr = new Binary(expr, token, right);
 		}
 		
 		return expr;
@@ -112,6 +137,34 @@ public class Parser {
 	      return new Expr.Grouping(expr);
 	    }
 	    
+	    // check for equality
+	    if (match(TokenType.BANG_EQUAL, TokenType.EQUAL_EQUAL)) {
+	    	error(previous(), "Missing left-hand operand.");
+	    	equality();
+	    	return null;
+	    }
+	    
+	    // check for comparison
+	    if (match(TokenType.GREATER, TokenType.GREATER_EQUAL, TokenType.LESS, TokenType.LESS_EQUAL)) {
+	    	error(previous(), "Missing left-hand operand.");
+	    	comparison();
+	    	return null;
+	    }
+	    
+	    // check for term
+	    if (match(TokenType.PLUS)) {
+	    	error(previous(), "Missing left-hand operand.");
+	    	term();
+	    	return null;
+	    }
+	    
+	    // check for factor
+	    if (match(TokenType.SLASH, TokenType.STAR)) {
+	    	error(previous(), "Missing left-hand operand.");
+	    	factor();
+	    	return null;
+	    }
+	    
 	    throw error(peek(), "Expect expression.");
 	}
 	
@@ -133,20 +186,21 @@ public class Parser {
 	}
 	
 	private Token advance() {
-		return this.tokens.get(current++);
+		if (!isAtEnd()) current++;
+		return previous();
 	}
 
 	private boolean check(TokenType type) {
+		if (isAtEnd()) return false;
 		return peek().getType() == type;
 	}
 	
 	private boolean isAtEnd() {
-		return tokens.get(current) == null;
+		return tokens.get(current).getType() == TokenType.EOF;
 	}
 	
 	private Token peek() {
-		if (!isAtEnd())return tokens.get(current);
-		return previous();
+		return tokens.get(current);
 	}
 
 	private Token previous() {
